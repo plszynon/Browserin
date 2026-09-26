@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nowa karta</title>
+<style>
+    body {
+        margin: 0;
+        padding: 0;
+        background: #202124;
+        color: #e8eaed;
+        font-family: sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        min-height: 100vh;
+    }
+    .logo {
+        margin-top: 60px;
+        font-size: 40px;
+        font-weight: bold;
+        letter-spacing: 1px;
+    }
+    .search-box {
+        margin-top: 30px;
+        width: 85%;
+        max-width: 500px;
+        display: flex;
+        align-items: center;
+        background: #303134;
+        border-radius: 24px;
+        padding: 12px 18px;
+    }
+    .search-box input {
+        flex: 1;
+        background: transparent;
+        border: none;
+        outline: none;
+        color: #e8eaed;
+        font-size: 16px;
+    }
+    .shortcuts {
+        margin-top: 40px;
+        width: 90%;
+        max-width: 500px;
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+    }
+    .shortcut {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-decoration: none;
+        color: #e8eaed;
+        font-size: 12px;
+    }
+    .shortcut .circle {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: #4285F4;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        font-weight: bold;
+        color: white;
+        margin-bottom: 6px;
+    }
+    .empty-msg {
+        margin-top: 40px;
+        color: #9aa0a6;
+        font-size: 14px;
+        text-align: center;
+        padding: 0 20px;
+    }
+</style>
+</head>
+<body>
+
+    <div class="logo">Nowa karta</div>
+
+    <div class="search-box">
+        <input id="searchInput" type="text" placeholder="Szukaj w Google lub wpisz adres" />
+    </div>
+
+    <div class="shortcuts" id="shortcuts"></div>
+    <div class="empty-msg" id="emptyMsg" style="display:none;">
+        Brak zakładek — dodaj je przez Menu → "Dodaj do zakładek", a pojawią się tutaj jako skróty.
+    </div>
+
+<script>
+    const input = document.getElementById('searchInput');
+    input.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            const q = input.value.trim();
+            if (q.length === 0) return;
+            const looksLikeUrl = q.includes('.') && !q.includes(' ');
+            if (q.startsWith('http://') || q.startsWith('https://')) {
+                window.location = q;
+            } else if (looksLikeUrl) {
+                window.location = 'https://' + q;
+            } else {
+                window.location = 'https://www.google.com/search?q=' + encodeURIComponent(q);
+            }
+        }
+    });
+
+    try {
+        const raw = AndroidNewTab.getBookmarksJson();
+        const bookmarks = JSON.parse(raw);
+        const container = document.getElementById('shortcuts');
+        if (bookmarks.length === 0) {
+            document.getElementById('emptyMsg').style.display = 'block';
+        } else {
+            bookmarks.reverse().slice(0, 12).forEach(function(b) {
+                const a = document.createElement('a');
+                a.className = 'shortcut';
+                a.href = b.url;
+                let hostLetter = '?';
+                try {
+                    hostLetter = new URL(b.url).hostname.replace('www.', '')[0].toUpperCase();
+                } catch (e) {}
+                a.innerHTML = '<div class="circle">' + hostLetter + '</div><span>' +
+                    (b.title.length > 10 ? b.title.substring(0, 10) + '…' : b.title) + '</span>';
+                container.appendChild(a);
+            });
+        }
+    } catch (e) {
+        document.getElementById('emptyMsg').style.display = 'block';
+        document.getElementById('emptyMsg').innerText = 'Nie udało się wczytać skrótów.';
+    }
+</script>
+
+</body>
+</html>
